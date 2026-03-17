@@ -1,0 +1,20 @@
+body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background-color: #0a1628;
+    color: #e0e0e0;
+}
+
+main {
+    flex: 1;
+}
+
+.cybai-header {
+    background-color: #111d33;
+    border-bottom: 1px solid #1a2d4a;
+}
+
+.tracking-wide {
+    letter-spacing: 0.15em;
+}
