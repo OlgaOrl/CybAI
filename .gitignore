@@ -1,0 +1,12 @@
+venv/
+__pycache__/
+*.pyc
+.env
+logs.csv
+.pytest_cache/
+htmlcov/
+*.egg-info/
+dist/
+build/
+.coverage
+docs/TODO.md
