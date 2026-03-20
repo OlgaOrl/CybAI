@@ -170,6 +170,49 @@ Before pushing, verify there is no code duplication:
 * No repeated test setup — use `conftest.py` fixtures
 * No hardcoded values repeated in multiple places — use constants or config
 
+## Shared Conventions
+
+### Risk Data Schema (`cybai/models.py`)
+
+All modules use the `Risk` dataclass as the single risk data format:
+
+| Field | Type | Description |
+|---|---|---|
+| `id` | `str` | Unique identifier |
+| `type` | `str` | Category (e.g. `network`, `web`, `system`, `access`) |
+| `title` | `str` | Short title in Estonian |
+| `description` | `str` | Detailed description in Estonian |
+| `severity` | `str` | One of: `critical`, `high`, `medium`, `low` |
+| `location` | `str` | IP, hostname, or URL where risk was found |
+| `found_at` | `str` | ISO 8601 timestamp (UTC) |
+
+Severity levels are defined in `SEVERITY_LEVELS` set. Passing an invalid severity raises `ValueError`.
+
+### Demo Mode (`cybai/demo_data.py`)
+
+- Controlled via `DEMO_MODE` environment variable (`true`/`false`, default: `false`)
+- Use `is_demo_mode()` to check whether demo mode is active
+- `DEMO_RISKS` is the single source of demo risk data — all modules must use this list
+- Demo risk content must be in Estonian
+
+### Structured Logging (`cybai/logging_utils.py`)
+
+Use `get_logger(module: str)` to obtain a logger. Every log entry is a single-line JSON object:
+
+```json
+{
+  "trace_id": "<uuid4>",
+  "timestamp": "<ISO 8601 UTC>",
+  "level": "INFO",
+  "module": "scanner",
+  "message": "Skaneerimine algas"
+}
+```
+
+**Rules:**
+- Never log PII: no `email`, `password`, `ssn`, `isikukood`, `telefon`, `ip_address` fields (KüTS § 7)
+- Always use `get_logger(__name__)` — never use `print()` or `logging.basicConfig()` directly
+
 ## Project Structure
 
 ```
