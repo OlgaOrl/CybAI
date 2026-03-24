@@ -18,3 +18,32 @@ main {
 .tracking-wide {
     letter-spacing: 0.15em;
 }
+
+.badge.bg-danger,
+.btn-outline-danger {
+    --bs-danger-rgb: 230, 70, 70;
+}
+
+.badge.bg-warning,
+.btn-outline-warning {
+    --bs-warning-rgb: 230, 170, 50;
+    color: #fff !important;
+}
+
+.badge.bg-info,
+.btn-outline-info {
+    --bs-info-rgb: 50, 190, 210;
+}
+
+.badge.bg-secondary,
+.btn-outline-secondary {
+    --bs-secondary-rgb: 140, 150, 160;
+}
+
+.card.bg-dark {
+    background-color: #111d33 !important;
+}
+
+.progress {
+    background-color: #1a2d4a;
+}

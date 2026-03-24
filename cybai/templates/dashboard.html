@@ -1,5 +1,199 @@
 {% extends "base.html" %}
 
 {% block content %}
-<p class="text-muted">Tere tulemast CybAI juhtpaneelile.</p>
+<!-- Statistics cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card bg-dark border-secondary">
+            <div class="card-body text-center">
+                <p class="text-muted small mb-1">Kriitilised riskid</p>
+                <h2 id="stat-critical" class="text-danger mb-0">0</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-dark border-secondary">
+            <div class="card-body text-center">
+                <p class="text-muted small mb-1">Kõrged riskid</p>
+                <h2 id="stat-high" class="text-warning mb-0">0</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-dark border-secondary">
+            <div class="card-body text-center">
+                <p class="text-muted small mb-1">Lahendatud</p>
+                <h2 id="stat-resolved" class="mb-0">0</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-dark border-secondary">
+            <div class="card-body text-center">
+                <p class="text-muted small mb-1">Viimane skaneerimine</p>
+                <h2 id="stat-last-scan" class="text-info mb-0 fs-4">—</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Severity filter buttons -->
+<div class="d-flex gap-2 mb-4">
+    <button class="btn btn-sm btn-outline-info active" onclick="filterRisks('all')" data-filter="all">Kõik</button>
+    <button class="btn btn-sm btn-outline-danger" onclick="filterRisks('critical')" data-filter="critical">Kriitilised</button>
+    <button class="btn btn-sm btn-outline-warning" onclick="filterRisks('high')" data-filter="high">Kõrged</button>
+    <button class="btn btn-sm btn-outline-info" onclick="filterRisks('medium')" data-filter="medium">Keskmised</button>
+    <button class="btn btn-sm btn-outline-secondary" onclick="filterRisks('low')" data-filter="low">Madalad</button>
+</div>
+
+<div class="row">
+    <!-- Risk list -->
+    <div class="col-lg-8">
+        <h5 class="mb-3">Tuvastatud riskid (<span id="risk-count">0</span>)</h5>
+
+        <div id="scan-loading" class="text-center d-none mb-4">
+            <div class="spinner-border text-info" role="status">
+                <span class="visually-hidden">Laadimine...</span>
+            </div>
+            <p class="text-muted mt-2">Skaneerimine käib...</p>
+        </div>
+
+        <div id="scan-results">
+            <p class="text-muted">Vajuta "Skanni kohe" skaneerimise alustamiseks.</p>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <!-- Risk distribution -->
+        <div class="card bg-dark border-secondary mb-3">
+            <div class="card-body">
+                <h6>Riskide jaotus</h6>
+                <div id="risk-distribution">
+                    <p class="text-muted small">Andmed puuduvad</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let allRisks = [];
+
+const SEVERITY_COLORS = {
+    critical: "danger",
+    high: "warning",
+    medium: "info",
+    low: "secondary"
+};
+
+const SEVERITY_LABELS = {
+    critical: "Kriitiline",
+    high: "Kõrge",
+    medium: "Keskmine",
+    low: "Madal"
+};
+
+function severityBadge(severity) {
+    return `<span class="badge bg-${SEVERITY_COLORS[severity]}">${SEVERITY_LABELS[severity]}</span>`;
+}
+
+function updateStats(risks) {
+    const counts = { critical: 0, high: 0, medium: 0, low: 0 };
+    risks.forEach(r => counts[r.severity]++);
+
+    document.getElementById("stat-critical").textContent = counts.critical;
+    document.getElementById("stat-high").textContent = counts.high;
+    document.getElementById("stat-last-scan").textContent =
+        new Date().toLocaleTimeString("et-EE", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    document.getElementById("risk-count").textContent = risks.length;
+}
+
+function updateDistribution(risks) {
+    const counts = { critical: 0, high: 0, medium: 0, low: 0 };
+    risks.forEach(r => counts[r.severity]++);
+    const total = risks.length || 1;
+
+    let html = "";
+    for (const [severity, count] of Object.entries(counts)) {
+        if (count === 0) continue;
+        const pct = Math.round((count / total) * 100);
+        html += `
+        <div class="mb-2">
+            <div class="d-flex justify-content-between small mb-1">
+                <span>${SEVERITY_LABELS[severity]}</span>
+                <span>${count}</span>
+            </div>
+            <div class="progress" style="height: 8px;">
+                <div class="progress-bar bg-${SEVERITY_COLORS[severity]}" style="width: ${pct}%"></div>
+            </div>
+        </div>`;
+    }
+    document.getElementById("risk-distribution").innerHTML = html || '<p class="text-muted small">Andmed puuduvad</p>';
+}
+
+function renderRisks(risks) {
+    const results = document.getElementById("scan-results");
+
+    if (risks.length === 0) {
+        results.innerHTML = '<div class="alert alert-success">Riske ei leitud!</div>';
+        return;
+    }
+
+    let html = "";
+    risks.forEach(risk => {
+        const time = risk.found_at ? risk.found_at.substring(11, 16) : "";
+        html += `
+        <div class="card bg-dark border-secondary mb-2 risk-item" data-severity="${risk.severity}">
+            <div class="card-body py-2 px-3">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            ${severityBadge(risk.severity)}
+                            <strong>${risk.title}</strong>
+                        </div>
+                        <small class="text-muted">${risk.location} &nbsp; ${time}</small>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+    });
+    results.innerHTML = html;
+}
+
+function filterRisks(severity) {
+    document.querySelectorAll("[data-filter]").forEach(btn => btn.classList.remove("active"));
+    document.querySelector(`[data-filter="${severity}"]`).classList.add("active");
+
+    const filtered = severity === "all" ? allRisks : allRisks.filter(r => r.severity === severity);
+    document.getElementById("risk-count").textContent = filtered.length;
+    renderRisks(filtered);
+}
+
+function startScan() {
+    const btn = document.getElementById("scan-btn");
+    const loading = document.getElementById("scan-loading");
+    const results = document.getElementById("scan-results");
+
+    btn.disabled = true;
+    loading.classList.remove("d-none");
+    results.innerHTML = "";
+
+    fetch("/scan", { method: "POST" })
+        .then(r => r.json())
+        .then(data => {
+            loading.classList.add("d-none");
+            btn.disabled = false;
+            allRisks = data;
+            updateStats(data);
+            updateDistribution(data);
+            renderRisks(data);
+        })
+        .catch(() => {
+            loading.classList.add("d-none");
+            btn.disabled = false;
+            results.innerHTML = '<div class="alert alert-danger">Skaneerimine ebaõnnestus.</div>';
+        });
+}
+</script>
 {% endblock %}
