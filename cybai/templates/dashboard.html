@@ -144,7 +144,7 @@ function renderRisks(risks) {
     risks.forEach(risk => {
         const time = risk.found_at ? risk.found_at.substring(11, 16) : "";
         html += `
-        <div class="card bg-dark border-secondary mb-2 risk-item" data-severity="${risk.severity}">
+        <div class="card bg-dark border-secondary mb-2 risk-item" data-severity="${risk.severity}" id="risk-${risk.id}">
             <div class="card-body py-2 px-3">
                 <div class="d-flex justify-content-between align-items-start">
                     <div>
@@ -154,6 +154,7 @@ function renderRisks(risks) {
                         </div>
                         <small class="text-muted">${risk.location} &nbsp; ${time}</small>
                     </div>
+                    <button class="btn btn-sm btn-outline-success ms-2" onclick="resolveRisk('${risk.id}')">Lahenda</button>
                 </div>
             </div>
         </div>`;
@@ -170,6 +171,19 @@ function filterRisks(severity) {
     renderRisks(filtered);
 }
 
+function resolveRisk(riskId) {
+    fetch(`/api/resolve/${riskId}`, { method: "POST" })
+        .then(r => r.json())
+        .then(() => {
+            const card = document.getElementById(`risk-${riskId}`);
+            if (card) card.remove();
+            document.getElementById("stat-resolved").textContent =
+                parseInt(document.getElementById("stat-resolved").textContent || "0") + 1;
+            document.getElementById("risk-count").textContent =
+                document.querySelectorAll(".risk-item").length;
+        });
+}
+
 function startScan() {
     const btn = document.getElementById("scan-btn");
     const loading = document.getElementById("scan-loading");
@@ -179,7 +193,7 @@ function startScan() {
     loading.classList.remove("d-none");
     results.innerHTML = "";
 
-    fetch("/scan", { method: "POST" })
+    fetch("/api/scan")
         .then(r => r.json())
         .then(data => {
             loading.classList.add("d-none");
