@@ -24,3 +24,11 @@ def test_dashboard_uses_bootstrap(client):
     response = client.get("/")
     html = response.data.decode()
     assert "bootstrap" in html.lower()
+
+
+def test_logo_links_to_home(client):
+    """CybAI logo must be a link to dashboard root."""
+    response = client.get("/")
+    html = response.data.decode()
+    assert 'href="/"' in html
+    assert "CybAI" in html
