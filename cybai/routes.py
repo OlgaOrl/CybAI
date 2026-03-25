@@ -47,6 +47,7 @@ def dashboard():
 # ---------------------------------------------------------------------------
 
 
+@bp.route("/scan", methods=["POST"])
 @bp.route("/api/scan")
 def api_scan():
     """Trigger infrastructure scan and return results."""
