@@ -2,6 +2,7 @@ import re
 
 from flask import Blueprint, current_app, jsonify, render_template
 
+from cybai.analyzer import analyze_risk
 from cybai.logging_utils import get_logger
 from cybai.scanner import scan_infrastructure
 
@@ -103,6 +104,20 @@ def api_notify(risk_id: str):
 
     logger.info("Teavitus saadetud riski kohta: %s", risk_id)
     return jsonify({"teade": "Teavitus on saadetud", "id": risk_id})
+
+
+@bp.route("/api/analyze", methods=["POST"])
+def api_analyze():
+    """Analyze all risks from the last scan."""
+    state = _state()
+    risks = state["scan_results"]
+    if not risks:
+        return jsonify([])
+
+    logger.info("Analüüs algas, %d riski", len(risks))
+    analyses = [analyze_risk(r) for r in risks]
+    logger.info("Analüüs lõpetatud")
+    return jsonify([a.to_dict() for a in analyses])
 
 
 @bp.route("/api/status")

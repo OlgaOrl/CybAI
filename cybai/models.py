@@ -33,7 +33,8 @@ class RiskAnalysis:
     severity: Literal["high", "medium", "low"]
     why_dangerous_et: str
     recommendation_et: str
-    confidence: Literal["high", "medium", "low"]
+    estimated_fix_time: str = ""
+    confidence: Literal["high", "medium", "low"] = "medium"
     eits_mapping: list[str] = field(default_factory=list)
     sources: list[str] = field(default_factory=list)
     analysis_mode: Literal["demo", "ai", "fallback"] = "fallback"
