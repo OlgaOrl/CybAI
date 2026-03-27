@@ -3,6 +3,7 @@ import re
 from flask import Blueprint, current_app, jsonify, render_template
 
 from cybai.analyzer import analyze_risk
+from cybai.email_scanner import get_email_checks
 from cybai.logging_utils import get_logger
 from cybai.scanner import scan_infrastructure
 
@@ -118,6 +119,25 @@ def api_analyze():
     analyses = [analyze_risk(r) for r in risks]
     logger.info("Analüüs lõpetatud")
     return jsonify([a.to_dict() for a in analyses])
+
+
+@bp.route("/api/email-scan", methods=["POST"])
+def api_email_scan():
+    """Check email security (SPF, DKIM, DMARC) for a domain."""
+    from flask import request
+
+    data = request.get_json(silent=True) or {}
+    domain = data.get("domain", "")
+
+    if not domain:
+        return jsonify({"teade": "Domeen on kohustuslik"}), 400
+
+    try:
+        result = get_email_checks(domain)
+    except ValueError:
+        return jsonify({"teade": "Vigane domeeninimi"}), 400
+
+    return jsonify(result)
 
 
 @bp.route("/api/status")
