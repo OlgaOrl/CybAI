@@ -65,6 +65,20 @@
 
     <!-- Sidebar -->
     <div class="col-lg-4">
+        <!-- Email security -->
+        <div class="card bg-dark border-secondary mb-3">
+            <div class="card-body">
+                <h6>E-posti turvalisus</h6>
+                <div class="input-group input-group-sm mb-2">
+                    <input type="text" id="email-domain" class="form-control bg-dark text-light border-secondary" placeholder="domeen.ee">
+                    <button class="btn btn-outline-info" onclick="checkEmail()">Kontrolli</button>
+                </div>
+                <div id="email-checks">
+                    <p class="text-muted small">Sisesta domeen kontrollimiseks.</p>
+                </div>
+            </div>
+        </div>
+
         <!-- Risk distribution -->
         <div class="card bg-dark border-secondary mb-3">
             <div class="card-body">
@@ -207,6 +221,40 @@ function startScan() {
             loading.classList.add("d-none");
             btn.disabled = false;
             results.innerHTML = '<div class="alert alert-danger">Skaneerimine ebaõnnestus.</div>';
+        });
+}
+
+function checkEmail() {
+    const domain = document.getElementById("email-domain").value.trim();
+    const container = document.getElementById("email-checks");
+    if (!domain) return;
+
+    container.innerHTML = '<p class="text-muted small">Kontrollimine...</p>';
+
+    fetch("/api/email-scan", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({domain: domain})
+    })
+        .then(r => r.json())
+        .then(data => {
+            if (data.teade) {
+                container.innerHTML = `<p class="text-danger small">${data.teade}</p>`;
+                return;
+            }
+            let html = "";
+            data.checks.forEach(c => {
+                const icon = c.status === "pass" ? "✓" : "✗";
+                const cls = c.status === "pass" ? "text-success" : "text-danger";
+                html += `<div class="d-flex justify-content-between small mb-1">
+                    <span>${c.protocol}</span>
+                    <span class="${cls}">${icon}</span>
+                </div>`;
+            });
+            container.innerHTML = html;
+        })
+        .catch(() => {
+            container.innerHTML = '<p class="text-danger small">Kontrollimine ebaõnnestus.</p>';
         });
 }
 </script>
