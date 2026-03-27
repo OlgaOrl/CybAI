@@ -14,7 +14,18 @@ _DOMAIN_RE = re.compile(
     r"^(?!-)[A-Za-z0-9-]{1,63}(?<!-)(\.[A-Za-z0-9-]{1,63})*\.[A-Za-z]{2,}$"
 )
 
-DKIM_SELECTORS = ["default", "google", "selector1", "selector2", "k1"]
+DKIM_SELECTORS = [
+    "default",
+    "google",
+    "selector1",
+    "selector2",
+    "k1",
+    "firebase1",
+    "firebase2",
+    "mail",
+    "s1",
+    "s2",
+]
 
 DEMO_EMAIL_RISKS = [
     Risk(
