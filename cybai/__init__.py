@@ -24,12 +24,13 @@ def create_app():
         enabled=not app.config.get("TESTING", False),
     )
 
-    from cybai.routes import bp, api_scan, api_notify
+    from cybai.routes import bp, api_scan, api_analyze, api_notify
 
     app.register_blueprint(bp)
 
     # Apply rate limits to expensive endpoints
     limiter.limit("10 per minute")(api_scan)
+    limiter.limit("5 per minute")(api_analyze)
     limiter.limit("20 per minute")(api_notify)
 
     # Error handlers — JSON only, no stack traces (OWASP A05)
